@@ -1,6 +1,7 @@
 # Korean Word Vectors Docker
 A fork of [KoreanWordVectors](https://github.com/SungjoonPark/KoreanWordVectors) by Park SungJoon.
 Updated to the most recent release of [fastText](https://github.com/facebookresearch/fastText/).
+For questions about the fastText implementation, refer to these.
 
 ## Training Data
 Run [data.sh](/src/util/data.sh) (with the optional argument `train`, `dev`, or `test`) to download and parse a 2020 corpus based on a NamuWiki crawl.
