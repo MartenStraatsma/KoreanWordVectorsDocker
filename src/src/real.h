@@ -6,13 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#ifndef FASTTEXT_REAL_H
-#define FASTTEXT_REAL_H
+#pragma once
 
 namespace fasttext {
 
 typedef float real;
-
 }
-
-#endif
