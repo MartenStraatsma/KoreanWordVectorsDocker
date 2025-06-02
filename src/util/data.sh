@@ -22,7 +22,7 @@ perl -CSD -pe 's/[^\p{L}\n]/ /g; s/[^\S\n]+/ /g; s/^\s+|[^\S\n]+$//mg;' |
 grep -v -P '[^\p{Hangul}\s]' > filtered.txt
 rm namuwikitext_20200302.$ver
 
-# deconstruct 한글
-echo deconstructing
+# decompose 한글
+echo decomposing
 python3 decompose_letters.py filtered.txt preprocessed.txt
 rm filtered.txt
