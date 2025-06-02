@@ -22,4 +22,4 @@ RUN apk update && \
 COPY --from=build *.o ./app/
 COPY --from=build fasttext ./app/
 
-ENTRYPOINT [ "/bin/sh", "-c", "while true; do sleep 1000; done" ]
+ENTRYPOINT [ "tail", "-f", "/dev/null" ]
