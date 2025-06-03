@@ -7,7 +7,7 @@
  */
 
 #include "meter.h"
-#include "utils.h"
+#include <fasttext/utils.h>
 
 #include <algorithm>
 #include <cmath>

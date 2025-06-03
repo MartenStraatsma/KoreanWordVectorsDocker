@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "args.h"
-#include "real.h"
+#include <fasttext/real.h>
 
 namespace fasttext {
 

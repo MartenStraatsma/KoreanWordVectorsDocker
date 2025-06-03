@@ -7,8 +7,8 @@
  */
 
 #include "fasttext.h"
-#include "loss.h"
-#include "quantmatrix.h"
+#include <fasttext/loss.h>
+#include <fasttext/quantmatrix.h>
 
 #include <algorithm>
 #include <iomanip>

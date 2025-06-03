@@ -20,14 +20,14 @@
 #include <tuple>
 
 #include "args.h"
-#include "densematrix.h"
+#include <fasttext/densematrix.h>
 #include "dictionary.h"
-#include "matrix.h"
+#include <fasttext/matrix.h>
 #include "meter.h"
-#include "model.h"
-#include "real.h"
-#include "utils.h"
-#include "vector.h"
+#include <fasttext/model.h>
+#include <fasttext/real.h>
+#include <fasttext/utils.h>
+#include <fasttext/vector.h>
 
 namespace fasttext {
 

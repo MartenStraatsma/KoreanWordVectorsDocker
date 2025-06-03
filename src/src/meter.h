@@ -12,8 +12,8 @@
 #include <vector>
 
 #include "dictionary.h"
-#include "real.h"
-#include "utils.h"
+#include <fasttext/real.h>
+#include <fasttext/utils.h>
 
 namespace fasttext {
 
