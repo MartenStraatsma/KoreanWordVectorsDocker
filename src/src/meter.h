@@ -12,17 +12,16 @@
 #include <vector>
 
 #include "dictionary.h"
-#include <fasttext/real.h>
 #include <fasttext/utils.h>
 
-namespace fasttext {
+namespace koreanfasttext {
 
 class Meter {
   struct Metrics {
     uint64_t gold;
     uint64_t predicted;
     uint64_t predictedGold;
-    mutable std::vector<std::pair<real, real>> scoreVsTrue;
+    mutable std::vector<std::pair<fasttext::real, fasttext::real>> scoreVsTrue;
 
     Metrics() : gold(0), predicted(0), predictedGold(0), scoreVsTrue() {}
 
@@ -45,7 +44,7 @@ class Meter {
       return 2 * predictedGold / double(predicted + gold);
     }
 
-    std::vector<std::pair<real, real>> getScoreVsTrue() {
+    std::vector<std::pair<fasttext::real, fasttext::real>> getScoreVsTrue() {
       return scoreVsTrue;
     }
   };
@@ -60,12 +59,12 @@ class Meter {
         labelMetrics_(),
         falseNegativeLabels_(falseNegativeLabels) {}
 
-  void log(const std::vector<int32_t>& labels, const Predictions& predictions);
+  void log(const std::vector<int32_t>& labels, const fasttext::Predictions& predictions);
 
   double precision(int32_t);
   double recall(int32_t);
   double f1Score(int32_t);
-  std::vector<std::pair<real, real>> scoreVsTrue(int32_t labelId) const;
+  std::vector<std::pair<fasttext::real, fasttext::real>> scoreVsTrue(int32_t labelId) const;
   double precisionAtRecall(int32_t labelId, double recall) const;
   double precisionAtRecall(double recall) const;
   double recallAtPrecision(int32_t labelId, double recall) const;
@@ -88,4 +87,4 @@ class Meter {
   bool falseNegativeLabels_;
 };
 
-} // namespace fasttext
+} // namespace koreanfasttext

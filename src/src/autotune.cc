@@ -54,7 +54,7 @@ class ElapsedTimeMarker {
 
 } // namespace
 
-namespace fasttext {
+namespace koreanfasttext {
 
 constexpr double kUnknownBestScore = -1.0;
 constexpr int kCutoffLimit = 256;
@@ -231,7 +231,7 @@ void Autotune::printInfo(double maxDuration) {
     std::cerr << bestScore_;
   }
   std::cerr << " ETA: "
-            << utils::ClockPrint(std::max(maxDuration - elapsed_, 0.0));
+            << fasttext::utils::ClockPrint(std::max(maxDuration - elapsed_, 0.0));
   std::cerr << std::flush;
 }
 
@@ -241,7 +241,7 @@ void Autotune::timer(
   elapsed_ = 0.0;
   while (keepTraining(maxDuration)) {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    elapsed_ = utils::getDuration(start, std::chrono::steady_clock::now());
+    elapsed_ = fasttext::utils::getDuration(start, std::chrono::steady_clock::now());
     printInfo(maxDuration);
   }
   abort();
@@ -435,7 +435,7 @@ void Autotune::train(const Args& autotuneArgs) {
                     << std::endl;
         }
       }
-    } catch (DenseMatrix::EncounteredNaNError&) {
+    } catch (fasttext::DenseMatrix::EncounteredNaNError&) {
       // ignore diverging loss and go on
     } catch (std::bad_alloc&) {
       // ignore parameter samples asking too much memory
@@ -474,4 +474,4 @@ void Autotune::train(const Args& autotuneArgs) {
   }
 }
 
-} // namespace fasttext
+} // namespace koreanfasttext

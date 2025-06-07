@@ -17,7 +17,7 @@
 #include <iterator>
 #include <stdexcept>
 
-namespace fasttext {
+namespace koreanfasttext {
 
 const std::string Dictionary::EOS = "</s>";
 const std::string Dictionary::BOW = "<";
@@ -117,7 +117,7 @@ void Dictionary::getSubwords(
   }
 }
 
-bool Dictionary::discard(int32_t id, real rand) const {
+bool Dictionary::discard(int32_t id, fasttext::real rand) const {
   assert(id >= 0);
   assert(id < nwords_);
   if (args_->model == model_name::sup) {
@@ -312,7 +312,7 @@ void Dictionary::threshold(int64_t t, int64_t tl) {
 void Dictionary::initTableDiscard() {
   pdiscard_.resize(size_);
   for (size_t i = 0; i < size_; i++) {
-    real f = real(words_[i].count) / real(ntokens_);
+    fasttext::real f = fasttext::real(words_[i].count) / fasttext::real(ntokens_);
     pdiscard_[i] = std::sqrt(args_->t / f) + args_->t / f;
   }
 }
@@ -605,4 +605,4 @@ void Dictionary::dump(std::ostream& out) const {
   }
 }
 
-} // namespace fasttext
+} // namespace koreanfasttext

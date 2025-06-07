@@ -29,7 +29,7 @@
 #include <fasttext/utils.h>
 #include <fasttext/vector.h>
 
-namespace fasttext {
+namespace koreanfasttext {
 
 class FastText {
  public:
@@ -39,46 +39,46 @@ class FastText {
  protected:
   std::shared_ptr<Args> args_;
   std::shared_ptr<Dictionary> dict_;
-  std::shared_ptr<Matrix> input_;
-  std::shared_ptr<Matrix> output_;
-  std::shared_ptr<Model> model_;
+  std::shared_ptr<fasttext::Matrix> input_;
+  std::shared_ptr<fasttext::Matrix> output_;
+  std::shared_ptr<fasttext::Model> model_;
   std::atomic<int64_t> tokenCount_{};
-  std::atomic<real> loss_{};
+  std::atomic<fasttext::real> loss_{};
   std::chrono::steady_clock::time_point start_;
   bool quant_;
   int32_t version;
-  std::unique_ptr<DenseMatrix> wordVectors_;
+  std::unique_ptr<fasttext::DenseMatrix> wordVectors_;
   std::exception_ptr trainException_;
 
   void signModel(std::ostream&);
   bool checkModel(std::istream&);
   void startThreads(const TrainCallback& callback = {});
-  void addInputVector(Vector&, int32_t) const;
+  void addInputVector(fasttext::Vector&, int32_t) const;
   void trainThread(int32_t, const TrainCallback& callback);
-  std::vector<std::pair<real, std::string>> getNN(
-      const DenseMatrix& wordVectors,
-      const Vector& queryVec,
+  std::vector<std::pair<fasttext::real, std::string>> getNN(
+      const fasttext::DenseMatrix& wordVectors,
+      const fasttext::Vector& queryVec,
       int32_t k,
       const std::set<std::string>& banSet);
   void lazyComputeWordVectors();
-  void printInfo(real, real, std::ostream&);
-  std::shared_ptr<Matrix> getInputMatrixFromFile(const std::string&) const;
-  std::shared_ptr<Matrix> createRandomMatrix() const;
-  std::shared_ptr<Matrix> createTrainOutputMatrix() const;
+  void printInfo(fasttext::real, fasttext::real, std::ostream&);
+  std::shared_ptr<fasttext::Matrix> getInputMatrixFromFile(const std::string&) const;
+  std::shared_ptr<fasttext::Matrix> createRandomMatrix() const;
+  std::shared_ptr<fasttext::Matrix> createTrainOutputMatrix() const;
   std::vector<int64_t> getTargetCounts() const;
-  std::shared_ptr<Loss> createLoss(std::shared_ptr<Matrix>& output);
+  std::shared_ptr<fasttext::Loss> createLoss(std::shared_ptr<fasttext::Matrix>& output);
   void supervised(
-      Model::State& state,
-      real lr,
+      fasttext::Model::State& state,
+      fasttext::real lr,
       const std::vector<int32_t>& line,
       const std::vector<int32_t>& labels);
-  void cbow(Model::State& state, real lr, const std::vector<int32_t>& line);
-  void skipgram(Model::State& state, real lr, const std::vector<int32_t>& line);
+  void cbow(fasttext::Model::State& state, fasttext::real lr, const std::vector<int32_t>& line);
+  void skipgram(fasttext::Model::State& state, fasttext::real lr, const std::vector<int32_t>& line);
   std::vector<int32_t> selectEmbeddings(int32_t cutoff) const;
-  void precomputeWordVectors(DenseMatrix& wordVectors);
+  void precomputeWordVectors(fasttext::DenseMatrix& wordVectors);
   bool keepTraining(const int64_t ntokens) const;
   void buildModel();
-  std::tuple<int64_t, double, double> progressInfo(real progress);
+  std::tuple<int64_t, double, double> progressInfo(fasttext::real progress);
 
  public:
   FastText();
@@ -89,11 +89,11 @@ class FastText {
 
   int32_t getLabelId(const std::string& label) const;
 
-  void getWordVector(Vector& vec, const std::string& word) const;
+  void getWordVector(fasttext::Vector& vec, const std::string& word) const;
 
-  void getSubwordVector(Vector& vec, const std::string& subword) const;
+  void getSubwordVector(fasttext::Vector& vec, const std::string& subword) const;
 
-  inline void getInputVector(Vector& vec, int32_t ind) {
+  inline void getInputVector(fasttext::Vector& vec, int32_t ind) {
     vec.zero();
     addInputVector(vec, ind);
   }
@@ -102,13 +102,13 @@ class FastText {
 
   std::shared_ptr<const Dictionary> getDictionary() const;
 
-  std::shared_ptr<const DenseMatrix> getInputMatrix() const;
+  std::shared_ptr<const fasttext::DenseMatrix> getInputMatrix() const;
 
   void setMatrices(
-      const std::shared_ptr<DenseMatrix>& inputMatrix,
-      const std::shared_ptr<DenseMatrix>& outputMatrix);
+      const std::shared_ptr<fasttext::DenseMatrix>& inputMatrix,
+      const std::shared_ptr<fasttext::DenseMatrix>& outputMatrix);
 
-  std::shared_ptr<const DenseMatrix> getOutputMatrix() const;
+  std::shared_ptr<const fasttext::DenseMatrix> getOutputMatrix() const;
 
   void saveVectors(const std::string& filename);
 
@@ -120,35 +120,35 @@ class FastText {
 
   void loadModel(const std::string& filename);
 
-  void getSentenceVector(std::istream& in, Vector& vec);
+  void getSentenceVector(std::istream& in, fasttext::Vector& vec);
 
   void quantize(const Args& qargs, const TrainCallback& callback = {});
 
   std::tuple<int64_t, double, double>
-  test(std::istream& in, int32_t k, real threshold = 0.0);
+  test(std::istream& in, int32_t k, fasttext::real threshold = 0.0);
 
-  void test(std::istream& in, int32_t k, real threshold, Meter& meter) const;
+  void test(std::istream& in, int32_t k, fasttext::real threshold, Meter& meter) const;
 
   void predict(
       int32_t k,
       const std::vector<int32_t>& words,
-      Predictions& predictions,
-      real threshold = 0.0) const;
+      fasttext::Predictions& predictions,
+      fasttext::real threshold = 0.0) const;
 
   bool predictLine(
       std::istream& in,
-      std::vector<std::pair<real, std::string>>& predictions,
+      std::vector<std::pair<fasttext::real, std::string>>& predictions,
       int32_t k,
-      real threshold) const;
+      fasttext::real threshold) const;
 
-  std::vector<std::pair<std::string, Vector>> getNgramVectors(
+  std::vector<std::pair<std::string, fasttext::Vector>> getNgramVectors(
       const std::string& word) const;
 
-  std::vector<std::pair<real, std::string>> getNN(
+  std::vector<std::pair<fasttext::real, std::string>> getNN(
       const std::string& word,
       int32_t k);
 
-  std::vector<std::pair<real, std::string>> getAnalogies(
+  std::vector<std::pair<fasttext::real, std::string>> getAnalogies(
       int32_t k,
       const std::string& wordA,
       const std::string& wordB,
@@ -167,4 +167,4 @@ class FastText {
     AbortError() : std::runtime_error("Aborted.") {}
   };
 };
-} // namespace fasttext
+} // namespace koreanfasttext

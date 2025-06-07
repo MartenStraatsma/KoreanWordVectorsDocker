@@ -8,14 +8,13 @@
 
 #pragma once
 
-#include <istream>
-#include <ostream>
+#include <iostream>
 #include <string>
 #include <unordered_set>
 #include <vector>
 #include <cstdint>
 
-namespace fasttext {
+namespace koreanfasttext {
 
 enum class model_name : int { cbow = 1, sg, sup };
 enum class loss_name : int { hs = 1, ns, softmax, ova };
@@ -97,4 +96,4 @@ class Args {
 
   static constexpr double kUnlimitedModelSize = -1.0;
 };
-} // namespace fasttext
+} // namespace koreanfasttext

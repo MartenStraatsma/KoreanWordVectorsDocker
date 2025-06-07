@@ -10,11 +10,10 @@
 #include <iostream>
 #include <queue>
 #include <stdexcept>
-#include "args.h"
 #include "autotune.h"
 #include "fasttext.h"
 
-using namespace fasttext;
+using namespace koreanfasttext;
 
 void printUsage() {
   std::cerr
@@ -137,7 +136,7 @@ void test(const std::vector<std::string>& args) {
   const auto& model = args[2];
   const auto& input = args[3];
   int32_t k = args.size() > 4 ? std::stoi(args[4]) : 1;
-  real threshold = args.size() > 5 ? std::stof(args[5]) : 0.0;
+  fasttext::real threshold = args.size() > 5 ? std::stof(args[5]) : 0.0;
 
   FastText fasttext;
   fasttext.loadModel(model);
@@ -181,7 +180,7 @@ void test(const std::vector<std::string>& args) {
 }
 
 void printPredictions(
-    const std::vector<std::pair<real, std::string>>& predictions,
+    const std::vector<std::pair<fasttext::real, std::string>>& predictions,
     bool printProb,
     bool multiline) {
   bool first = true;
@@ -209,7 +208,7 @@ void predict(const std::vector<std::string>& args) {
     exit(EXIT_FAILURE);
   }
   int32_t k = 1;
-  real threshold = 0.0;
+  fasttext::real threshold = 0.0;
   if (args.size() > 4) {
     k = std::stoi(args[4]);
     if (args.size() == 6) {
@@ -232,7 +231,7 @@ void predict(const std::vector<std::string>& args) {
     }
   }
   std::istream& in = inputIsStdIn ? std::cin : ifs;
-  std::vector<std::pair<real, std::string>> predictions;
+  std::vector<std::pair<fasttext::real, std::string>> predictions;
   while (fasttext.predictLine(in, predictions, k, threshold)) {
     printPredictions(predictions, printProb, false);
   }
@@ -251,7 +250,7 @@ void printWordVectors(const std::vector<std::string> args) {
   FastText fasttext;
   fasttext.loadModel(std::string(args[2]));
   std::string word;
-  Vector vec(fasttext.getDimension());
+  fasttext::Vector vec(fasttext.getDimension());
   while (std::cin >> word) {
     fasttext.getWordVector(vec, word);
     std::cout << word << " " << vec << std::endl;
@@ -266,7 +265,7 @@ void printSentenceVectors(const std::vector<std::string> args) {
   }
   FastText fasttext;
   fasttext.loadModel(std::string(args[2]));
-  Vector svec(fasttext.getDimension());
+  fasttext::Vector svec(fasttext.getDimension());
   while (std::cin.peek() != EOF) {
     fasttext.getSentenceVector(std::cin, svec);
     // Don't print sentence
@@ -284,7 +283,7 @@ void printNgrams(const std::vector<std::string> args) {
   fasttext.loadModel(std::string(args[2]));
 
   std::string word(args[3]);
-  std::vector<std::pair<std::string, Vector>> ngramVectors =
+  std::vector<std::pair<std::string, fasttext::Vector>> ngramVectors =
       fasttext.getNgramVectors(word);
 
   for (const auto& ngramVector : ngramVectors) {

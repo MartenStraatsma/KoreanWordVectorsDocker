@@ -14,10 +14,9 @@
 #include <thread>
 #include <vector>
 
-#include "args.h"
 #include "fasttext.h"
 
-namespace fasttext {
+namespace koreanfasttext {
 
 class AutotuneStrategy {
  private:
@@ -86,4 +85,4 @@ class Autotune {
   void train(const Args& args);
 };
 
-} // namespace fasttext
+} // namespace koreanfasttext
