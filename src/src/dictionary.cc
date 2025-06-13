@@ -17,7 +17,7 @@
 #include <iterator>
 #include <stdexcept>
 
-namespace koreanfasttext {
+namespace fasttext {
 
 const std::string Dictionary::EOS = "</s>";
 const std::string Dictionary::BOW = "<";
@@ -117,7 +117,7 @@ void Dictionary::getSubwords(
   }
 }
 
-bool Dictionary::discard(int32_t id, fasttext::real rand) const {
+bool Dictionary::discard(int32_t id, real rand) const {
   assert(id >= 0);
   assert(id < nwords_);
   if (args_->model == model_name::sup) {
@@ -173,42 +173,24 @@ void Dictionary::computeSubwords(
     const std::string& word,
     std::vector<int32_t>& ngrams,
     std::vector<std::string>* substrings) const {
-  for (size_t i = 0, n_jamos = 0; i < word.size(); i++) {
-    if ((word[i] & 0xC0) == 0x80)
-      continue;
-    n_jamos++;
-	  if (isalpha(word[i-1]) && (word[i-1] != args_->emptyjschar[0]))
-      n_jamos += 2;
-
-    std::string jamogram;
-    for (size_t j = i, n = 1; j < word.size() && n <= args_->maxjn; n++) {
-      jamogram.push_back(word[j++]);
-      while (j < word.size() && (word[j] & 0xC0) == 0x80)
-        jamogram.push_back(word[j++]);
-      
-      if (n >= args_->minjn && !(n == 1 && (i == 0 || j == word.size()))) {
-        pushHash(ngrams, hash(jamogram) % args_->bucket);
-        if (substrings)
-          substrings->push_back(jamogram);
-      }
-    }
-
+  for (size_t i = 0; i < word.size(); i++) {
     std::string ngram;
-    if (n_jamos % 3 == 2)
-      for (size_t j = i, n = 1, n_jamos = 1; j < word.size(); n++) {
-        if (isalpha(word[j]) && (word[j] != args_->emptyjschar[0]))
-          n_jamos += 2;
+    if ((word[i] & 0xC0) == 0x80) {
+      continue;
+    }
+    for (size_t j = i, n = 1; j < word.size() && n <= args_->maxn; n++) {
+      ngram.push_back(word[j++]);
+      while (j < word.size() && (word[j] & 0xC0) == 0x80) {
         ngram.push_back(word[j++]);
-
-        while (j < word.size() && (word[j] & 0xC0) == 0x80)
-          ngram.push_back(word[j++]);
-
-        if (n > args_->maxjn && n < args_->maxn * 3 + 1 && n % 3 == 0 && !(i == 0 || j == word.size())) {
-          pushHash(ngrams, hash(ngram) % args_->bucket);
-          if (substrings)
-            substrings->push_back(ngram);
+      }
+      if (n >= args_->minn && !(n == 1 && (i == 0 || j == word.size()))) {
+        int32_t h = hash(ngram) % args_->bucket;
+        pushHash(ngrams, h);
+        if (substrings) {
+          substrings->push_back(ngram);
         }
       }
+    }
   }
 }
 
@@ -312,7 +294,7 @@ void Dictionary::threshold(int64_t t, int64_t tl) {
 void Dictionary::initTableDiscard() {
   pdiscard_.resize(size_);
   for (size_t i = 0; i < size_; i++) {
-    fasttext::real f = fasttext::real(words_[i].count) / fasttext::real(ntokens_);
+    real f = real(words_[i].count) / real(ntokens_);
     pdiscard_[i] = std::sqrt(args_->t / f) + args_->t / f;
   }
 }
@@ -605,4 +587,4 @@ void Dictionary::dump(std::ostream& out) const {
   }
 }
 
-} // namespace koreanfasttext
+} // namespace fasttext

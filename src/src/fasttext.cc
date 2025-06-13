@@ -7,8 +7,8 @@
  */
 
 #include "fasttext.h"
-#include <fasttext/loss.h>
-#include <fasttext/quantmatrix.h>
+#include "loss.h"
+#include "quantmatrix.h"
 
 #include <algorithm>
 #include <iomanip>
@@ -20,28 +20,28 @@
 #include <thread>
 #include <vector>
 
-namespace koreanfasttext {
+namespace fasttext {
 
 constexpr int32_t FASTTEXT_VERSION = 12; /* Version 1b */
 constexpr int32_t FASTTEXT_FILEFORMAT_MAGIC_INT32 = 793712314;
 
 bool comparePairs(
-    const std::pair<fasttext::real, std::string>& l,
-    const std::pair<fasttext::real, std::string>& r);
+    const std::pair<real, std::string>& l,
+    const std::pair<real, std::string>& r);
 
-std::shared_ptr<fasttext::Loss> FastText::createLoss(std::shared_ptr<fasttext::Matrix>& output) {
+std::shared_ptr<Loss> FastText::createLoss(std::shared_ptr<Matrix>& output) {
   loss_name lossName = args_->loss;
   switch (lossName) {
     case loss_name::hs:
-      return std::make_shared<fasttext::HierarchicalSoftmaxLoss>(
+      return std::make_shared<HierarchicalSoftmaxLoss>(
           output, getTargetCounts());
     case loss_name::ns:
-      return std::make_shared<fasttext::NegativeSamplingLoss>(
+      return std::make_shared<NegativeSamplingLoss>(
           output, args_->neg, getTargetCounts());
     case loss_name::softmax:
-      return std::make_shared<fasttext::SoftmaxLoss>(output);
+      return std::make_shared<SoftmaxLoss>(output);
     case loss_name::ova:
-      return std::make_shared<fasttext::OneVsAllLoss>(output);
+      return std::make_shared<OneVsAllLoss>(output);
     default:
       throw std::runtime_error("Unknown loss");
   }
@@ -50,7 +50,7 @@ std::shared_ptr<fasttext::Loss> FastText::createLoss(std::shared_ptr<fasttext::M
 FastText::FastText()
     : quant_(false), wordVectors_(nullptr), trainException_(nullptr) {}
 
-void FastText::addInputVector(fasttext::Vector& vec, int32_t ind) const {
+void FastText::addInputVector(Vector& vec, int32_t ind) const {
   vec.addRow(*input_, ind);
 }
 
@@ -62,33 +62,33 @@ const Args FastText::getArgs() const {
   return *args_.get();
 }
 
-std::shared_ptr<const fasttext::DenseMatrix> FastText::getInputMatrix() const {
+std::shared_ptr<const DenseMatrix> FastText::getInputMatrix() const {
   if (quant_) {
     throw std::runtime_error("Can't export quantized matrix");
   }
   assert(input_.get());
-  return std::dynamic_pointer_cast<fasttext::DenseMatrix>(input_);
+  return std::dynamic_pointer_cast<DenseMatrix>(input_);
 }
 
 void FastText::setMatrices(
-    const std::shared_ptr<fasttext::DenseMatrix>& inputMatrix,
-    const std::shared_ptr<fasttext::DenseMatrix>& outputMatrix) {
+    const std::shared_ptr<DenseMatrix>& inputMatrix,
+    const std::shared_ptr<DenseMatrix>& outputMatrix) {
   assert(input_->size(1) == output_->size(1));
 
-  input_ = std::dynamic_pointer_cast<fasttext::Matrix>(inputMatrix);
-  output_ = std::dynamic_pointer_cast<fasttext::Matrix>(outputMatrix);
+  input_ = std::dynamic_pointer_cast<Matrix>(inputMatrix);
+  output_ = std::dynamic_pointer_cast<Matrix>(outputMatrix);
   wordVectors_.reset();
   args_->dim = input_->size(1);
 
   buildModel();
 }
 
-std::shared_ptr<const fasttext::DenseMatrix> FastText::getOutputMatrix() const {
+std::shared_ptr<const DenseMatrix> FastText::getOutputMatrix() const {
   if (quant_ && args_->qout) {
     throw std::runtime_error("Can't export quantized matrix");
   }
   assert(output_.get());
-  return std::dynamic_pointer_cast<fasttext::DenseMatrix>(output_);
+  return std::dynamic_pointer_cast<DenseMatrix>(output_);
 }
 
 int32_t FastText::getWordId(const std::string& word) const {
@@ -108,7 +108,7 @@ int32_t FastText::getLabelId(const std::string& label) const {
   return labelId;
 }
 
-void FastText::getWordVector(fasttext::Vector& vec, const std::string& word) const {
+void FastText::getWordVector(Vector& vec, const std::string& word) const {
   const std::vector<int32_t>& ngrams = dict_->getSubwords(word);
   vec.zero();
   for (int i = 0; i < ngrams.size(); i++) {
@@ -119,7 +119,7 @@ void FastText::getWordVector(fasttext::Vector& vec, const std::string& word) con
   }
 }
 
-void FastText::getSubwordVector(fasttext::Vector& vec, const std::string& subword) const {
+void FastText::getSubwordVector(Vector& vec, const std::string& subword) const {
   vec.zero();
   int32_t h = dict_->hash(subword) % args_->bucket;
   h = h + dict_->nwords();
@@ -136,7 +136,7 @@ void FastText::saveVectors(const std::string& filename) {
         filename + " cannot be opened for saving vectors!");
   }
   ofs << dict_->nwords() << " " << args_->dim << std::endl;
-  fasttext::Vector vec(args_->dim);
+  Vector vec(args_->dim);
   for (int32_t i = 0; i < dict_->nwords(); i++) {
     std::string word = dict_->getWord(i);
     getWordVector(vec, word);
@@ -158,7 +158,7 @@ void FastText::saveOutput(const std::string& filename) {
   int32_t n =
       (args_->model == model_name::sup) ? dict_->nlabels() : dict_->nwords();
   ofs << n << " " << args_->dim << std::endl;
-  fasttext::Vector vec(args_->dim);
+  Vector vec(args_->dim);
   for (int32_t i = 0; i < n; i++) {
     std::string word = (args_->model == model_name::sup) ? dict_->getLabel(i)
                                                          : dict_->getWord(i);
@@ -233,13 +233,13 @@ std::vector<int64_t> FastText::getTargetCounts() const {
 void FastText::buildModel() {
   auto loss = createLoss(output_);
   bool normalizeGradient = (args_->model == model_name::sup);
-  model_ = std::make_shared<fasttext::Model>(input_, output_, loss, normalizeGradient);
+  model_ = std::make_shared<Model>(input_, output_, loss, normalizeGradient);
 }
 
 void FastText::loadModel(std::istream& in) {
   args_ = std::make_shared<Args>();
-  input_ = std::make_shared<fasttext::DenseMatrix>();
-  output_ = std::make_shared<fasttext::DenseMatrix>();
+  input_ = std::make_shared<DenseMatrix>();
+  output_ = std::make_shared<DenseMatrix>();
   args_->load(in);
   if (version == 11 && args_->model == model_name::sup) {
     // backward compatibility: old supervised models do not use char ngrams.
@@ -251,7 +251,7 @@ void FastText::loadModel(std::istream& in) {
   in.read((char*)&quant_input, sizeof(bool));
   if (quant_input) {
     quant_ = true;
-    input_ = std::make_shared<fasttext::QuantMatrix>();
+    input_ = std::make_shared<QuantMatrix>();
   }
   input_->load(in);
 
@@ -264,15 +264,15 @@ void FastText::loadModel(std::istream& in) {
 
   in.read((char*)&args_->qout, sizeof(bool));
   if (quant_ && args_->qout) {
-    output_ = std::make_shared<fasttext::QuantMatrix>();
+    output_ = std::make_shared<QuantMatrix>();
   }
   output_->load(in);
 
   buildModel();
 }
 
-std::tuple<int64_t, double, double> FastText::progressInfo(fasttext::real progress) {
-  double t = fasttext::utils::getDuration(start_, std::chrono::steady_clock::now());
+std::tuple<int64_t, double, double> FastText::progressInfo(real progress) {
+  double t = utils::getDuration(start_, std::chrono::steady_clock::now());
   double lr = args_->lr * (1.0 - progress);
   double wst = 0;
 
@@ -286,7 +286,7 @@ std::tuple<int64_t, double, double> FastText::progressInfo(fasttext::real progre
   return std::tuple<double, double, int64_t>(wst, lr, eta);
 }
 
-void FastText::printInfo(fasttext::real progress, fasttext::real loss, std::ostream& log_stream) {
+void FastText::printInfo(real progress, real loss, std::ostream& log_stream) {
   double wst;
   double lr;
   int64_t eta;
@@ -298,14 +298,14 @@ void FastText::printInfo(fasttext::real progress, fasttext::real loss, std::ostr
   log_stream << " words/sec/thread: " << std::setw(7) << int64_t(wst);
   log_stream << " lr: " << std::setw(9) << std::setprecision(6) << lr;
   log_stream << " avg.loss: " << std::setw(9) << std::setprecision(6) << loss;
-  log_stream << " ETA: " << fasttext::utils::ClockPrint(eta);
+  log_stream << " ETA: " << utils::ClockPrint(eta);
   log_stream << std::flush;
 }
 
 std::vector<int32_t> FastText::selectEmbeddings(int32_t cutoff) const {
-  std::shared_ptr<fasttext::DenseMatrix> input =
-      std::dynamic_pointer_cast<fasttext::DenseMatrix>(input_);
-  fasttext::Vector norms(input->size(0));
+  std::shared_ptr<DenseMatrix> input =
+      std::dynamic_pointer_cast<DenseMatrix>(input_);
+  Vector norms(input->size(0));
   input->l2NormRow(norms);
   std::vector<int32_t> idx(input->size(0), 0);
   std::iota(idx.begin(), idx.end(), 0);
@@ -328,17 +328,17 @@ void FastText::quantize(const Args& qargs, const TrainCallback& callback) {
   args_->input = qargs.input;
   args_->qout = qargs.qout;
   args_->output = qargs.output;
-  std::shared_ptr<fasttext::DenseMatrix> input =
-      std::dynamic_pointer_cast<fasttext::DenseMatrix>(input_);
-  std::shared_ptr<fasttext::DenseMatrix> output =
-      std::dynamic_pointer_cast<fasttext::DenseMatrix>(output_);
+  std::shared_ptr<DenseMatrix> input =
+      std::dynamic_pointer_cast<DenseMatrix>(input_);
+  std::shared_ptr<DenseMatrix> output =
+      std::dynamic_pointer_cast<DenseMatrix>(output_);
   bool normalizeGradient = (args_->model == model_name::sup);
 
   if (qargs.cutoff > 0 && qargs.cutoff < input->size(0)) {
     auto idx = selectEmbeddings(qargs.cutoff);
     dict_->prune(idx);
-    std::shared_ptr<fasttext::DenseMatrix> ninput =
-        std::make_shared<fasttext::DenseMatrix>(idx.size(), args_->dim);
+    std::shared_ptr<DenseMatrix> ninput =
+        std::make_shared<DenseMatrix>(idx.size(), args_->dim);
     for (auto i = 0; i < idx.size(); i++) {
       for (auto j = 0; j < args_->dim; j++) {
         ninput->at(i, j) = input->at(idx[i], j);
@@ -351,32 +351,32 @@ void FastText::quantize(const Args& qargs, const TrainCallback& callback) {
       args_->thread = qargs.thread;
       args_->verbose = qargs.verbose;
       auto loss = createLoss(output_);
-      model_ = std::make_shared<fasttext::Model>(input, output, loss, normalizeGradient);
+      model_ = std::make_shared<Model>(input, output, loss, normalizeGradient);
       startThreads(callback);
     }
   }
-  input_ = std::make_shared<fasttext::QuantMatrix>(
+  input_ = std::make_shared<QuantMatrix>(
       std::move(*(input.get())), qargs.dsub, qargs.qnorm);
 
   if (args_->qout) {
-    output_ = std::make_shared<fasttext::QuantMatrix>(
+    output_ = std::make_shared<QuantMatrix>(
         std::move(*(output.get())), 2, qargs.qnorm);
   }
   quant_ = true;
   auto loss = createLoss(output_);
-  model_ = std::make_shared<fasttext::Model>(input_, output_, loss, normalizeGradient);
+  model_ = std::make_shared<Model>(input_, output_, loss, normalizeGradient);
 }
 
 void FastText::supervised(
-    fasttext::Model::State& state,
-    fasttext::real lr,
+    Model::State& state,
+    real lr,
     const std::vector<int32_t>& line,
     const std::vector<int32_t>& labels) {
   if (labels.size() == 0 || line.size() == 0) {
     return;
   }
   if (args_->loss == loss_name::ova) {
-    model_->update(line, labels, fasttext::Model::kAllLabelsAsTarget, lr, state);
+    model_->update(line, labels, Model::kAllLabelsAsTarget, lr, state);
   } else {
     std::uniform_int_distribution<> uniform(0, labels.size() - 1);
     int32_t i = uniform(state.rng);
@@ -385,8 +385,8 @@ void FastText::supervised(
 }
 
 void FastText::cbow(
-    fasttext::Model::State& state,
-    fasttext::real lr,
+    Model::State& state,
+    real lr,
     const std::vector<int32_t>& line) {
   std::vector<int32_t> bow;
   std::uniform_int_distribution<> uniform(1, args_->ws);
@@ -404,8 +404,8 @@ void FastText::cbow(
 }
 
 void FastText::skipgram(
-    fasttext::Model::State& state,
-    fasttext::real lr,
+    Model::State& state,
+    real lr,
     const std::vector<int32_t>& line) {
   std::uniform_int_distribution<> uniform(1, args_->ws);
   for (int32_t w = 0; w < line.size(); w++) {
@@ -420,7 +420,7 @@ void FastText::skipgram(
 }
 
 std::tuple<int64_t, double, double>
-FastText::test(std::istream& in, int32_t k, fasttext::real threshold) {
+FastText::test(std::istream& in, int32_t k, real threshold) {
   Meter meter(false);
   test(in, k, threshold, meter);
 
@@ -428,12 +428,12 @@ FastText::test(std::istream& in, int32_t k, fasttext::real threshold) {
       meter.nexamples(), meter.precision(), meter.recall());
 }
 
-void FastText::test(std::istream& in, int32_t k, fasttext::real threshold, Meter& meter)
+void FastText::test(std::istream& in, int32_t k, real threshold, Meter& meter)
     const {
   std::vector<int32_t> line;
   std::vector<int32_t> labels;
-  fasttext::Predictions predictions;
-  fasttext::Model::State state(args_->dim, dict_->nlabels(), 0);
+  Predictions predictions;
+  Model::State state(args_->dim, dict_->nlabels(), 0);
   in.clear();
   in.seekg(0, std::ios_base::beg);
 
@@ -453,12 +453,12 @@ void FastText::test(std::istream& in, int32_t k, fasttext::real threshold, Meter
 void FastText::predict(
     int32_t k,
     const std::vector<int32_t>& words,
-    fasttext::Predictions& predictions,
-    fasttext::real threshold) const {
+    Predictions& predictions,
+    real threshold) const {
   if (words.empty()) {
     return;
   }
-  fasttext::Model::State state(args_->dim, dict_->nlabels(), 0);
+  Model::State state(args_->dim, dict_->nlabels(), 0);
   if (args_->model != model_name::sup) {
     throw std::invalid_argument("Model needs to be supervised for prediction!");
   }
@@ -467,9 +467,9 @@ void FastText::predict(
 
 bool FastText::predictLine(
     std::istream& in,
-    std::vector<std::pair<fasttext::real, std::string>>& predictions,
+    std::vector<std::pair<real, std::string>>& predictions,
     int32_t k,
-    fasttext::real threshold) const {
+    real threshold) const {
   predictions.clear();
   if (in.peek() == EOF) {
     return false;
@@ -477,7 +477,7 @@ bool FastText::predictLine(
 
   std::vector<int32_t> words, labels;
   dict_->getLine(in, words, labels);
-  fasttext::Predictions linePredictions;
+  Predictions linePredictions;
   predict(k, words, linePredictions, threshold);
   for (const auto& p : linePredictions) {
     predictions.push_back(
@@ -499,7 +499,7 @@ void FastText::getSentenceVector(std::istream& in, fasttext::Vector& svec) {
       svec.mul(1.0 / line.size());
     }
   } else {
-    fasttext::Vector vec(args_->dim);
+    Vector vec(args_->dim);
     std::string sentence;
     std::getline(in, sentence);
     std::istringstream iss(sentence);
@@ -507,7 +507,7 @@ void FastText::getSentenceVector(std::istream& in, fasttext::Vector& svec) {
     int32_t count = 0;
     while (iss >> word) {
       getWordVector(vec, word);
-      fasttext::real norm = vec.norm();
+      real norm = vec.norm();
       if (norm > 0) {
         vec.mul(1.0 / norm);
         svec.addVector(vec);
@@ -520,15 +520,15 @@ void FastText::getSentenceVector(std::istream& in, fasttext::Vector& svec) {
   }
 }
 
-std::vector<std::pair<std::string, fasttext::Vector>> FastText::getNgramVectors(
+std::vector<std::pair<std::string, Vector>> FastText::getNgramVectors(
     const std::string& word) const {
-  std::vector<std::pair<std::string, fasttext::Vector>> result;
+  std::vector<std::pair<std::string, Vector>> result;
   std::vector<int32_t> ngrams;
   std::vector<std::string> substrings;
   dict_->getSubwords(word, ngrams, substrings);
   assert(ngrams.size() <= substrings.size());
   for (int32_t i = 0; i < ngrams.size(); i++) {
-    fasttext::Vector vec(args_->dim);
+    Vector vec(args_->dim);
     if (ngrams[i] >= 0) {
       vec.addRow(*input_, ngrams[i]);
     }
@@ -537,13 +537,13 @@ std::vector<std::pair<std::string, fasttext::Vector>> FastText::getNgramVectors(
   return result;
 }
 
-void FastText::precomputeWordVectors(fasttext::DenseMatrix& wordVectors) {
-  fasttext::Vector vec(args_->dim);
+void FastText::precomputeWordVectors(DenseMatrix& wordVectors) {
+  Vector vec(args_->dim);
   wordVectors.zero();
   for (int32_t i = 0; i < dict_->nwords(); i++) {
     std::string word = dict_->getWord(i);
     getWordVector(vec, word);
-    fasttext::real norm = vec.norm();
+    real norm = vec.norm();
     if (norm > 0) {
       wordVectors.addVectorToRow(vec, i, 1.0 / norm);
     }
@@ -552,16 +552,16 @@ void FastText::precomputeWordVectors(fasttext::DenseMatrix& wordVectors) {
 
 void FastText::lazyComputeWordVectors() {
   if (!wordVectors_) {
-    wordVectors_ = std::unique_ptr<fasttext::DenseMatrix>(
-        new fasttext::DenseMatrix(dict_->nwords(), args_->dim));
+    wordVectors_ = std::unique_ptr<DenseMatrix>(
+        new DenseMatrix(dict_->nwords(), args_->dim));
     precomputeWordVectors(*wordVectors_);
   }
 }
 
-std::vector<std::pair<fasttext::real, std::string>> FastText::getNN(
+std::vector<std::pair<real, std::string>> FastText::getNN(
     const std::string& word,
     int32_t k) {
-  fasttext::Vector query(args_->dim);
+  Vector query(args_->dim);
 
   getWordVector(query, word);
 
@@ -570,14 +570,14 @@ std::vector<std::pair<fasttext::real, std::string>> FastText::getNN(
   return getNN(*wordVectors_, query, k, {word});
 }
 
-std::vector<std::pair<fasttext::real, std::string>> FastText::getNN(
-    const fasttext::DenseMatrix& wordVectors,
-    const fasttext::Vector& query,
+std::vector<std::pair<real, std::string>> FastText::getNN(
+    const DenseMatrix& wordVectors,
+    const Vector& query,
     int32_t k,
     const std::set<std::string>& banSet) {
-  std::vector<std::pair<fasttext::real, std::string>> heap;
+  std::vector<std::pair<real, std::string>> heap;
 
-  fasttext::real queryNorm = query.norm();
+  real queryNorm = query.norm();
   if (std::abs(queryNorm) < 1e-8) {
     queryNorm = 1;
   }
@@ -585,8 +585,8 @@ std::vector<std::pair<fasttext::real, std::string>> FastText::getNN(
   for (int32_t i = 0; i < dict_->nwords(); i++) {
     std::string word = dict_->getWord(i);
     if (banSet.find(word) == banSet.end()) {
-      fasttext::real dp = wordVectors.dotRow(query, i);
-      fasttext::real similarity = dp / queryNorm;
+      real dp = wordVectors.dotRow(query, i);
+      real similarity = dp / queryNorm;
 
       if (heap.size() == k && similarity < heap.front().first) {
         continue;
@@ -604,15 +604,15 @@ std::vector<std::pair<fasttext::real, std::string>> FastText::getNN(
   return heap;
 }
 
-std::vector<std::pair<fasttext::real, std::string>> FastText::getAnalogies(
+std::vector<std::pair<real, std::string>> FastText::getAnalogies(
     int32_t k,
     const std::string& wordA,
     const std::string& wordB,
     const std::string& wordC) {
-  fasttext::Vector query(args_->dim);
+  Vector query(args_->dim);
   query.zero();
 
-  fasttext::Vector buffer(args_->dim);
+  Vector buffer(args_->dim);
   getWordVector(buffer, wordA);
   query.addVector(buffer, 1.0 / (buffer.norm() + 1e-8));
   getWordVector(buffer, wordB);
@@ -631,9 +631,9 @@ bool FastText::keepTraining(const int64_t ntokens) const {
 
 void FastText::trainThread(int32_t threadId, const TrainCallback& callback) {
   std::ifstream ifs(args_->input);
-  fasttext::utils::seek(ifs, threadId * fasttext::utils::size(ifs) / args_->thread);
+  utils::seek(ifs, threadId * utils::size(ifs) / args_->thread);
 
-  fasttext::Model::State state(args_->dim, output_->size(0), threadId + args_->seed);
+  Model::State state(args_->dim, output_->size(0), threadId + args_->seed);
 
   const int64_t ntokens = dict_->ntokens();
   int64_t localTokenCount = 0;
@@ -641,7 +641,7 @@ void FastText::trainThread(int32_t threadId, const TrainCallback& callback) {
   uint64_t callbackCounter = 0;
   try {
     while (keepTraining(ntokens)) {
-      fasttext::real progress = fasttext::real(tokenCount_) / (args_->epoch * ntokens);
+      real progress = real(tokenCount_) / (args_->epoch * ntokens);
       if (callback && ((callbackCounter++ % 64) == 0)) {
         double wst;
         double lr;
@@ -650,7 +650,7 @@ void FastText::trainThread(int32_t threadId, const TrainCallback& callback) {
             progressInfo(progress);
         callback(progress, loss_, wst, lr, eta);
       }
-      fasttext::real lr = args_->lr * (1.0 - progress);
+      real lr = args_->lr * (1.0 - progress);
       if (args_->model == model_name::sup) {
         localTokenCount += dict_->getLine(ifs, line, labels);
         supervised(state, lr, line, labels);
@@ -669,7 +669,7 @@ void FastText::trainThread(int32_t threadId, const TrainCallback& callback) {
         }
       }
     }
-  } catch (fasttext::DenseMatrix::EncounteredNaNError&) {
+  } catch (DenseMatrix::EncounteredNaNError&) {
     trainException_ = std::current_exception();
   }
   if (threadId == 0)
@@ -677,11 +677,11 @@ void FastText::trainThread(int32_t threadId, const TrainCallback& callback) {
   ifs.close();
 }
 
-std::shared_ptr<fasttext::Matrix> FastText::getInputMatrixFromFile(
+std::shared_ptr<Matrix> FastText::getInputMatrixFromFile(
     const std::string& filename) const {
   std::ifstream in(filename);
   std::vector<std::string> words;
-  std::shared_ptr<fasttext::DenseMatrix> mat; // temp. matrix for pretrained vectors
+  std::shared_ptr<DenseMatrix> mat; // temp. matrix for pretrained vectors
   int64_t n, dim;
   if (!in.is_open()) {
     throw std::invalid_argument(filename + " cannot be opened for loading!");
@@ -692,7 +692,7 @@ std::shared_ptr<fasttext::Matrix> FastText::getInputMatrixFromFile(
         "Dimension of pretrained vectors (" + std::to_string(dim) +
         ") does not match dimension (" + std::to_string(args_->dim) + ")!");
   }
-  mat = std::make_shared<fasttext::DenseMatrix>(n, dim);
+  mat = std::make_shared<DenseMatrix>(n, dim);
   for (size_t i = 0; i < n; i++) {
     std::string word;
     in >> word;
@@ -706,7 +706,7 @@ std::shared_ptr<fasttext::Matrix> FastText::getInputMatrixFromFile(
 
   dict_->threshold(1, 0);
   dict_->init();
-  std::shared_ptr<fasttext::DenseMatrix> input = std::make_shared<fasttext::DenseMatrix>(
+  std::shared_ptr<DenseMatrix> input = std::make_shared<DenseMatrix>(
       dict_->nwords() + args_->bucket, args_->dim);
   input->uniform(1.0 / args_->dim, args_->thread, args_->seed);
 
@@ -722,19 +722,19 @@ std::shared_ptr<fasttext::Matrix> FastText::getInputMatrixFromFile(
   return input;
 }
 
-std::shared_ptr<fasttext::Matrix> FastText::createRandomMatrix() const {
-  std::shared_ptr<fasttext::DenseMatrix> input = std::make_shared<fasttext::DenseMatrix>(
+std::shared_ptr<Matrix> FastText::createRandomMatrix() const {
+  std::shared_ptr<DenseMatrix> input = std::make_shared<DenseMatrix>(
       dict_->nwords() + args_->bucket, args_->dim);
   input->uniform(1.0 / args_->dim, args_->thread, args_->seed);
 
   return input;
 }
 
-std::shared_ptr<fasttext::Matrix> FastText::createTrainOutputMatrix() const {
+std::shared_ptr<Matrix> FastText::createTrainOutputMatrix() const {
   int64_t m =
       (args_->model == model_name::sup) ? dict_->nlabels() : dict_->nwords();
-  std::shared_ptr<fasttext::DenseMatrix> output =
-      std::make_shared<fasttext::DenseMatrix>(m, args_->dim);
+  std::shared_ptr<DenseMatrix> output =
+      std::make_shared<DenseMatrix>(m, args_->dim);
   output->zero();
 
   return output;
@@ -764,7 +764,7 @@ void FastText::train(const Args& args, const TrainCallback& callback) {
   quant_ = false;
   auto loss = createLoss(output_);
   bool normalizeGradient = (args_->model == model_name::sup);
-  model_ = std::make_shared<fasttext::Model>(input_, output_, loss, normalizeGradient);
+  model_ = std::make_shared<Model>(input_, output_, loss, normalizeGradient);
   startThreads(callback);
 }
 
@@ -784,7 +784,7 @@ void FastText::startThreads(const TrainCallback& callback) {
   std::vector<std::thread> threads;
   if (args_->thread > 1) {
     for (int32_t i = 0; i < args_->thread; i++) {
-      threads.push_back(std::thread([=]() { trainThread(i, callback); }));
+      threads.push_back(std::thread([=, this]() { trainThread(i, callback); }));
     }
   } else {
     // webassembly can't instantiate `std::thread`
@@ -795,7 +795,7 @@ void FastText::startThreads(const TrainCallback& callback) {
   while (keepTraining(ntokens)) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     if (loss_ >= 0 && args_->verbose > 1) {
-      fasttext::real progress = fasttext::real(tokenCount_) / (args_->epoch * ntokens);
+      real progress = real(tokenCount_) / (args_->epoch * ntokens);
       std::cerr << "\r";
       printInfo(progress, loss_, std::cerr);
     }
@@ -824,9 +824,9 @@ bool FastText::isQuant() const {
 }
 
 bool comparePairs(
-    const std::pair<fasttext::real, std::string>& l,
-    const std::pair<fasttext::real, std::string>& r) {
+    const std::pair<real, std::string>& l,
+    const std::pair<real, std::string>& r) {
   return l.first > r.first;
 }
 
-} // namespace koreanfasttext
+} // namespace fasttext

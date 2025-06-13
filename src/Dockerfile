@@ -4,8 +4,7 @@ FROM alpine AS build
 
 RUN apk update && \
     apk add --no-cache \
-    build-base \
-    fasttext-dev
+    build-base
 
 COPY src/ ./src/
 COPY Makefile .
@@ -18,8 +17,7 @@ FROM alpine
 
 RUN apk update && \
     apk add --no-cache \
-    libstdc++ \
-    fasttext-libs
+    libstdc++
 
 COPY --from=build *.o ./app/
 COPY --from=build fasttext ./app/

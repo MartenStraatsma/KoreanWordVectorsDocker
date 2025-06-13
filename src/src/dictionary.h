@@ -18,9 +18,9 @@
 #include <vector>
 
 #include "args.h"
-#include <fasttext/real.h>
+#include "real.h"
 
-namespace koreanfasttext {
+namespace fasttext {
 
 typedef int32_t id_type;
 enum class entry_type : int8_t { word = 0, label = 1 };
@@ -49,7 +49,7 @@ class Dictionary {
   std::vector<int32_t> word2int_;
   std::vector<entry> words_;
 
-  std::vector<fasttext::real> pdiscard_;
+  std::vector<real> pdiscard_;
   int32_t size_;
   int32_t nwords_;
   int32_t nlabels_;
@@ -76,7 +76,7 @@ class Dictionary {
   int32_t getId(const std::string_view, uint32_t h) const;
   entry_type getType(int32_t) const;
   entry_type getType(const std::string_view) const;
-  bool discard(int32_t, fasttext::real) const;
+  bool discard(int32_t, real) const;
   std::string getWord(int32_t) const;
   const std::vector<int32_t>& getSubwords(int32_t) const;
   const std::vector<int32_t> getSubwords(const std::string&) const;
@@ -84,7 +84,7 @@ class Dictionary {
       const std::string&,
       std::vector<int32_t>&,
       std::vector<std::string>&) const;
-  void computeSubwords(
+  virtual void computeSubwords(
       const std::string&,
       std::vector<int32_t>&,
       std::vector<std::string>* substrings = nullptr) const;
@@ -111,4 +111,4 @@ class Dictionary {
   void init();
 };
 
-} // namespace koreanfasttext
+} // namespace fasttext

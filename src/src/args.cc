@@ -16,7 +16,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace koreanfasttext {
+namespace fasttext {
 
 Args::Args() {
   lr = 0.05;
@@ -29,12 +29,9 @@ Args::Args() {
   wordNgrams = 1;
   loss = loss_name::ns;
   model = model_name::sg;
-  bucket = 10000000;
-  minn = 1;
-  maxn = 4;
-  minjn = 3;
-  maxjn = 5;
-  emptyjschar = "e";
+  bucket = 2000000;
+  minn = 3;
+  maxn = 6;
   thread = 12;
   lrUpdateRate = 100;
   t = 1e-4;
@@ -116,9 +113,7 @@ void Args::parseArgs(const std::vector<std::string>& args) {
     loss = loss_name::softmax;
     minCount = 1;
     minn = 0;
-    minjn = 0;
     maxn = 0;
-    maxjn = 0;
     lr = 0.1;
   } else if (command == "cbow") {
     model = model_name::cbow;
@@ -140,8 +135,6 @@ void Args::parseArgs(const std::vector<std::string>& args) {
         input = std::string(args.at(ai + 1));
       } else if (args[ai] == "-output") {
         output = std::string(args.at(ai + 1));
-      } else if (args[ai] == "-emptyjschar") {
-        emptyjschar = std::string(args.at(ai + 1));
       } else if (args[ai] == "-lr") {
         lr = std::stof(args.at(ai + 1));
       } else if (args[ai] == "-lrUpdateRate") {
@@ -181,10 +174,6 @@ void Args::parseArgs(const std::vector<std::string>& args) {
         minn = std::stoi(args.at(ai + 1));
       } else if (args[ai] == "-maxn") {
         maxn = std::stoi(args.at(ai + 1));
-      } else if (args[ai] == "-minjn") {
-        minjn = std::stoi(args.at(ai + 1));
-      } else if (args[ai] == "-maxjn") {
-        maxjn = std::stoi(args.at(ai + 1));
       } else if (args[ai] == "-thread") {
         thread = std::stoi(args.at(ai + 1));
       } else if (args[ai] == "-t") {
@@ -264,15 +253,17 @@ void Args::printBasicHelp() {
 
 void Args::printDictionaryHelp() {
   std::cerr << "\nThe following arguments for the dictionary are optional:\n"
-            << "  -minCount           minimal number of word occurences [" << minCount << "]\n"
-            << "  -minCountLabel      minimal number of label occurences [" << minCountLabel << "]\n"
-            << "  -wordNgrams         max length of word ngram [" << wordNgrams << "]\n"
+            << "  -minCount           minimal number of word occurences ["
+            << minCount << "]\n"
+            << "  -minCountLabel      minimal number of label occurences ["
+            << minCountLabel << "]\n"
+            << "  -wordNgrams         max length of word ngram [" << wordNgrams
+            << "]\n"
             << "  -bucket             number of buckets [" << bucket << "]\n"
-            << "  -minn               min length of char ngram [" << minn << "]\n"
-            << "  -maxn               max length of char ngram [" << maxn << "]\n"
-            << "  -minjn              min length of jamo ngram [" << minjn << "]\n"
-            << "  -maxjn              max length of jamo ngram [" << maxjn << "]\n"
-            << "  -emptyjschar        empty jongsung symbol [" << emptyjschar << "]\n" 
+            << "  -minn               min length of char ngram [" << minn
+            << "]\n"
+            << "  -maxn               max length of char ngram [" << maxn
+            << "]\n"
             << "  -t                  sampling threshold [" << t << "]\n"
             << "  -label              labels prefix [" << label << "]\n";
 }
@@ -281,15 +272,23 @@ void Args::printTrainingHelp() {
   std::cerr
       << "\nThe following arguments for training are optional:\n"
       << "  -lr                 learning rate [" << lr << "]\n"
-      << "  -lrUpdateRate       change the rate of updates for the learning rate [" << lrUpdateRate << "]\n"
+      << "  -lrUpdateRate       change the rate of updates for the learning "
+         "rate ["
+      << lrUpdateRate << "]\n"
       << "  -dim                size of word vectors [" << dim << "]\n"
       << "  -ws                 size of the context window [" << ws << "]\n"
       << "  -epoch              number of epochs [" << epoch << "]\n"
       << "  -neg                number of negatives sampled [" << neg << "]\n"
-      << "  -loss               loss function {ns, hs, softmax, one-vs-all} [" << lossToString(loss) << "]\n"
-      << "  -thread             number of threads (set to 1 to ensure reproducible results) [" << thread << "]\n"
-      << "  -pretrainedVectors  pretrained word vectors for supervised learning [" << pretrainedVectors << "]\n"
-      << "  -saveOutput         whether output params should be saved [" << boolToString(saveOutput) << "]\n"
+      << "  -loss               loss function {ns, hs, softmax, one-vs-all} ["
+      << lossToString(loss) << "]\n"
+      << "  -thread             number of threads (set to 1 to ensure "
+         "reproducible results) ["
+      << thread << "]\n"
+      << "  -pretrainedVectors  pretrained word vectors for supervised "
+         "learning ["
+      << pretrainedVectors << "]\n"
+      << "  -saveOutput         whether output params should be saved ["
+      << boolToString(saveOutput) << "]\n"
       << "  -seed               random generator seed  [" << seed << "]\n";
 }
 
@@ -312,10 +311,15 @@ void Args::printAutotuneHelp() {
 void Args::printQuantizationHelp() {
   std::cerr
       << "\nThe following arguments for quantization are optional:\n"
-      << "  -cutoff             number of words and ngrams to retain [" << cutoff << "]\n"
-      << "  -retrain            whether embeddings are finetuned if a cutoff is applied [" << boolToString(retrain) << "]\n"
-      << "  -qnorm              whether the norm is quantized separately [" << boolToString(qnorm) << "]\n"
-      << "  -qout               whether the classifier is quantized [" << boolToString(qout) << "]\n"
+      << "  -cutoff             number of words and ngrams to retain ["
+      << cutoff << "]\n"
+      << "  -retrain            whether embeddings are finetuned if a cutoff "
+         "is applied ["
+      << boolToString(retrain) << "]\n"
+      << "  -qnorm              whether the norm is quantized separately ["
+      << boolToString(qnorm) << "]\n"
+      << "  -qout               whether the classifier is quantized ["
+      << boolToString(qout) << "]\n"
       << "  -dsub               size of each sub-vector [" << dsub << "]\n";
 }
 
@@ -331,9 +335,6 @@ void Args::save(std::ostream& out) {
   out.write((char*)&(bucket), sizeof(int));
   out.write((char*)&(minn), sizeof(int));
   out.write((char*)&(maxn), sizeof(int));
-  out.write((char*)&(emptyjschar), sizeof(char));
-  out.write((char*)&(minjn), sizeof(int));
-  out.write((char*)&(maxjn), sizeof(int));
   out.write((char*)&(lrUpdateRate), sizeof(int));
   out.write((char*)&(t), sizeof(double));
 }
@@ -350,30 +351,37 @@ void Args::load(std::istream& in) {
   in.read((char*)&(bucket), sizeof(int));
   in.read((char*)&(minn), sizeof(int));
   in.read((char*)&(maxn), sizeof(int));
-  in.read((char*)&(emptyjschar), sizeof(char));
-  in.read((char*)&(minjn), sizeof(int));
-  in.read((char*)&(maxjn), sizeof(int));
   in.read((char*)&(lrUpdateRate), sizeof(int));
   in.read((char*)&(t), sizeof(double));
 }
 
 void Args::dump(std::ostream& out) const {
-  out << "dim " << dim << std::endl;
-  out << "ws " << ws << std::endl;
-  out << "epoch " << epoch << std::endl;
-  out << "minCount " << minCount << std::endl;
-  out << "neg " << neg << std::endl;
-  out << "wordNgrams " << wordNgrams << std::endl;
-  out << "loss " << lossToString(loss) << std::endl;
-  out << "model " << modelToString(model) << std::endl;
-  out << "bucket " << bucket << std::endl;
-  out << "minn " << minn << std::endl;
-  out << "maxn " << maxn << std::endl;
-  out << "emptyjschar " << emptyjschar << std::endl;
-  out << "minjn " << minjn << std::endl;
-  out << "maxjn " << maxjn << std::endl;
-  out << "lrUpdateRate " << lrUpdateRate << std::endl;
-  out << "t " << t << std::endl;
+  out << "dim"
+      << " " << dim << std::endl;
+  out << "ws"
+      << " " << ws << std::endl;
+  out << "epoch"
+      << " " << epoch << std::endl;
+  out << "minCount"
+      << " " << minCount << std::endl;
+  out << "neg"
+      << " " << neg << std::endl;
+  out << "wordNgrams"
+      << " " << wordNgrams << std::endl;
+  out << "loss"
+      << " " << lossToString(loss) << std::endl;
+  out << "model"
+      << " " << modelToString(model) << std::endl;
+  out << "bucket"
+      << " " << bucket << std::endl;
+  out << "minn"
+      << " " << minn << std::endl;
+  out << "maxn"
+      << " " << maxn << std::endl;
+  out << "lrUpdateRate"
+      << " " << lrUpdateRate << std::endl;
+  out << "t"
+      << " " << t << std::endl;
 }
 
 bool Args::hasAutotune() const {
@@ -483,4 +491,4 @@ int64_t Args::getAutotuneModelSize() const {
   return size * multiplier;
 }
 
-} // namespace koreanfasttext
+} // namespace fasttext

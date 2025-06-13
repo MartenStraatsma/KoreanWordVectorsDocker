@@ -7,20 +7,21 @@
  */
 
 #include "meter.h"
+#include "utils.h"
 
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <limits>
 
-namespace koreanfasttext {
+namespace fasttext {
 
 constexpr int32_t kAllLabels = -1;
-constexpr fasttext::real falseNegativeScore = -1.0;
+constexpr real falseNegativeScore = -1.0;
 
 void Meter::log(
     const std::vector<int32_t>& labels,
-    const fasttext::Predictions& predictions) {
+    const Predictions& predictions) {
   nexamples_++;
   metrics_.gold += labels.size();
   metrics_.predicted += predictions.size();
@@ -28,9 +29,9 @@ void Meter::log(
   for (const auto& prediction : predictions) {
     labelMetrics_[prediction.second].predicted++;
 
-    fasttext::real score = std::min(std::exp(prediction.first), 1.0f);
-    fasttext::real gold = 0.0;
-    if (fasttext::utils::contains(labels, prediction.second)) {
+    real score = std::min(std::exp(prediction.first), 1.0f);
+    real gold = 0.0;
+    if (utils::contains(labels, prediction.second)) {
       labelMetrics_[prediction.second].predictedGold++;
       metrics_.predictedGold++;
       gold = 1.0;
@@ -41,7 +42,7 @@ void Meter::log(
   for (const auto& label : labels) {
     labelMetrics_[label].gold++;
     if (falseNegativeLabels_) {
-      if (!fasttext::utils::containsSecond(predictions, label)) {
+      if (!utils::containsSecond(predictions, label)) {
         labelMetrics_[label].scoreVsTrue.emplace_back(falseNegativeScore, 1.0);
       }
     }
@@ -171,7 +172,7 @@ std::vector<std::pair<double, double>> Meter::precisionRecallCurve(
       positiveCounts.begin(),
       positiveCounts.end(),
       golds,
-      fasttext::utils::compareFirstLess);
+      utils::compareFirstLess);
 
   if (fullRecall != positiveCounts.end()) {
     fullRecall = std::next(fullRecall);
@@ -193,8 +194,8 @@ std::vector<std::pair<double, double>> Meter::precisionRecallCurve(
   return precisionRecallCurve;
 }
 
-std::vector<std::pair<fasttext::real, fasttext::real>> Meter::scoreVsTrue(int32_t labelId) const {
-  std::vector<std::pair<fasttext::real, fasttext::real>> ret;
+std::vector<std::pair<real, real>> Meter::scoreVsTrue(int32_t labelId) const {
+  std::vector<std::pair<real, real>> ret;
   if (labelId == kAllLabels) {
     for (const auto& k : labelMetrics_) {
       auto& labelScoreVsTrue = labelMetrics_.at(k.first).scoreVsTrue;
@@ -210,4 +211,4 @@ std::vector<std::pair<fasttext::real, fasttext::real>> Meter::scoreVsTrue(int32_
   return ret;
 }
 
-} // namespace koreanfasttext
+} // namespace fasttext

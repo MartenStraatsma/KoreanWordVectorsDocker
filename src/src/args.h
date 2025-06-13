@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include <iostream>
+#include <istream>
+#include <ostream>
 #include <string>
 #include <unordered_set>
 #include <vector>
-#include <cstdint>
 
-namespace koreanfasttext {
+namespace fasttext {
 
 enum class model_name : int { cbow = 1, sg, sup };
 enum class loss_name : int { hs = 1, ns, softmax, ova };
@@ -52,9 +52,6 @@ class Args {
   int bucket;
   int minn;
   int maxn;
-  int minjn;
-  int maxjn;
-  std::string emptyjschar;
   int thread;
   double t;
   std::string label;
@@ -75,16 +72,16 @@ class Args {
   int autotuneDuration;
   std::string autotuneModelSize;
 
-  void parseArgs(const std::vector<std::string>& args);
+  virtual void parseArgs(const std::vector<std::string>& args);
   void printHelp();
   void printBasicHelp();
-  void printDictionaryHelp();
+  virtual void printDictionaryHelp();
   void printTrainingHelp();
   void printAutotuneHelp();
   void printQuantizationHelp();
-  void save(std::ostream&);
-  void load(std::istream&);
-  void dump(std::ostream&) const;
+  virtual void save(std::ostream&);
+  virtual void load(std::istream&);
+  virtual void dump(std::ostream&) const;
   bool hasAutotune() const;
   bool isManual(const std::string& argName) const;
   void setManual(const std::string& argName);
@@ -96,4 +93,4 @@ class Args {
 
   static constexpr double kUnlimitedModelSize = -1.0;
 };
-} // namespace koreanfasttext
+} // namespace fasttext

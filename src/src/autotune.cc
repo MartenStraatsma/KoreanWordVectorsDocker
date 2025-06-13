@@ -54,7 +54,7 @@ class ElapsedTimeMarker {
 
 } // namespace
 
-namespace koreanfasttext {
+namespace fasttext {
 
 constexpr double kUnknownBestScore = -1.0;
 constexpr int kCutoffLimit = 256;
@@ -231,7 +231,7 @@ void Autotune::printInfo(double maxDuration) {
     std::cerr << bestScore_;
   }
   std::cerr << " ETA: "
-            << fasttext::utils::ClockPrint(std::max(maxDuration - elapsed_, 0.0));
+            << utils::ClockPrint(std::max(maxDuration - elapsed_, 0.0));
   std::cerr << std::flush;
 }
 
@@ -241,7 +241,7 @@ void Autotune::timer(
   elapsed_ = 0.0;
   while (keepTraining(maxDuration)) {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    elapsed_ = fasttext::utils::getDuration(start, std::chrono::steady_clock::now());
+    elapsed_ = utils::getDuration(start, std::chrono::steady_clock::now());
     printInfo(maxDuration);
   }
   abort();
@@ -261,7 +261,7 @@ void Autotune::abort() {
 void Autotune::startTimer(const Args& args) {
   std::chrono::steady_clock::time_point start =
       std::chrono::steady_clock::now();
-  timer_ = std::thread([=]() { timer(start, args.autotuneDuration); });
+  timer_ = std::thread([=, this]() { timer(start, args.autotuneDuration); });
   bestScore_ = kUnknownBestScore;
   trials_ = 0;
   continueTraining_ = true;
@@ -435,7 +435,7 @@ void Autotune::train(const Args& autotuneArgs) {
                     << std::endl;
         }
       }
-    } catch (fasttext::DenseMatrix::EncounteredNaNError&) {
+    } catch (DenseMatrix::EncounteredNaNError&) {
       // ignore diverging loss and go on
     } catch (std::bad_alloc&) {
       // ignore parameter samples asking too much memory
@@ -474,4 +474,4 @@ void Autotune::train(const Args& autotuneArgs) {
   }
 }
 
-} // namespace koreanfasttext
+} // namespace fasttext
